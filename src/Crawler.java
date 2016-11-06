@@ -157,10 +157,9 @@ public class Crawler
 			String root = crawler.props.getProperty("crawler.root");
 			crawler.createDB();
 			crawler.fetchURL(root);
-		}
-		catch( Exception e) {
+		} catch( Exception e) {
          		e.printStackTrace();
 		}
-    	}
+	}
 }
 
