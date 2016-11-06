@@ -4,6 +4,11 @@ import java.util.regex.*;
 import java.sql.*;
 import java.util.*;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 public class Crawler
 {
 	Connection connection;
@@ -50,102 +55,42 @@ public class Crawler
 	}
 
 	public boolean urlInDB(String urlFound) throws SQLException, IOException {
-         	Statement stat = connection.createStatement();
+        Statement stat = connection.createStatement();
 		ResultSet result = stat.executeQuery( "SELECT * FROM urls WHERE url LIKE '"+urlFound+"'");
 
 		if (result.next()) {
-	        	System.out.println("URL "+urlFound+" already in DB");
+			System.out.println("URL "+urlFound+" already in DB");
 			return true;
 		}
-	       // System.out.println("URL "+urlFound+" not yet in DB");
+	       System.out.println("URL "+urlFound+" not yet in DB");
 		return false;
 	}
 
 	public void insertURLInDB( String url) throws SQLException, IOException {
-         	Statement stat = connection.createStatement();
+		Statement stat = connection.createStatement();
 		String query = "INSERT INTO urls VALUES ('"+urlID+"','"+url+"','')";
-		//System.out.println("Executing "+query);
+		System.out.println("Executing " + query);
 		stat.executeUpdate( query );
 		urlID++;
 	}
 
-/*
-	public String makeAbsoluteURL(String url, String parentURL) {
-		if (url.indexOf(":")<0) {
-			// the protocol part is already there.
-			return url;
-		}
-
-		if (url.length > 0 && url.charAt(0) == '/') {
-			// It starts with '/'. Add only host part.
-			int posHost = url.indexOf("://");
-			if (posHost <0) {
-				return url;
-			}
-			int posAfterHist = url.indexOf("/", posHost+3);
-			if (posAfterHist < 0) {
-				posAfterHist = url.Length();
-			}
-			String hostPart = url.substring(0, posAfterHost);
-			return hostPart + "/" + url;
-		} 
-
-		// URL start with a char different than "/"
-		int pos = parentURL.lastIndexOf("/");
-		int posHost = parentURL.indexOf("://");
-		if (posHost <0) {
-			return url;
-		}
-		
-		
-		
-
-	}
-*/
-
-   	public void fetchURL(String urlScanned) {
+   	public void fetchURL(String url) {
 		try {
-			URL url = new URL(urlScanned);
-			System.out.println("urlscanned="+urlScanned+" url.path="+url.getPath());
- 
-    			// open reader for URL
-    			InputStreamReader in = 
-       				new InputStreamReader(url.openStream());
+			Document doc = Jsoup.connect(url).get();
 
-    			// read contents into string builder
-    			StringBuilder input = new StringBuilder();
-    			int ch;
-			while ((ch = in.read()) != -1) {
-         			input.append((char) ch);
+			Elements links = doc.select("a[href]");
+
+			for (Element link: links) {
+				String absUrl = link.attr("abs:href").toString();
+
+				if (!urlInDB(absUrl)) {
+					insertURLInDB(absUrl);
+				}
+
 			}
-
-     			// search for all occurrences of pattern
-    			String patternString =  "<a\\s+href\\s*=\\s*(\"[^\"]*\"|[^\\s>]*)\\s*>";
-    			Pattern pattern = 			
-	     			Pattern.compile(patternString, 
-	     			Pattern.CASE_INSENSITIVE);
-    			Matcher matcher = pattern.matcher(input);
-		
-			while (matcher.find()) {
-    				int start = matcher.start();
-    				int end = matcher.end();
-    				String match = input.substring(start, end);
-				String urlFound = matcher.group(1);
-				System.out.println(urlFound);
-
-				// Check if it is already in the database
-				if (!urlInDB(urlFound)) {
-					insertURLInDB(urlFound);
-				}				
-	
-    				//System.out.println(match);
- 			}
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-      		catch (Exception e)
-      		{
-       			e.printStackTrace();
-      		}
 	}
 
    	public static void main(String[] args)
