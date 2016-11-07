@@ -4,6 +4,7 @@ import java.util.regex.*;
 import java.sql.*;
 import java.util.*;
 
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
@@ -154,12 +155,14 @@ public class Crawler {
 		insertWordsInDB(Words, urlID);
 	}
 
-	public void crawlBFS(String root) {
+	public void crawlBFS(String root) throws SQLException, IOException {
 		queue.add(root);
+		insertURLInDB(root);
 		//int counter = 0;
 
 		while (!queue.isEmpty()) {
 			String u = (String) queue.remove();
+			System.out.println("Removed String is: " + u);
 			//System.out.println("Current count is: " + counter);
 			if (!fetchURL(u)) return;
 			//counter++;
