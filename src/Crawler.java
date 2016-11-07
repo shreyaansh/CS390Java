@@ -55,9 +55,9 @@ public class Crawler {
 		}
 			
 		// Create the table
-        	stat.executeUpdate("CREATE TABLE URLS (urlid INT, url VARCHAR(512), description VARCHAR(200))");
+        	stat.executeUpdate("CREATE TABLE URLS (urlid INT, url VARCHAR(512), imgUrl VARCHAR(250), description VARCHAR(200))");
 		// Create word table
-			stat.executeUpdate("CREATE TABLE WORDS (word VARCHAR(100), urdid INT)");
+			stat.executeUpdate("CREATE TABLE WORDS (word VARCHAR(100), urlid INT)");
 	}
 
 	public boolean urlInDB(String urlFound) throws SQLException, IOException {
@@ -74,14 +74,20 @@ public class Crawler {
 
 	public void insertURLInDB(String url) throws SQLException, IOException {
 		// Check if url returns an HTML file or not
+		String imgUrl = "";
 		try {
 			Document doc = Jsoup.connect(url).get();
+			Elements el = doc.getElementsByTag("img");
+			for (Element e: el) {
+				imgUrl = e.absUrl("src");
+				break;
+			}
 		} catch (UnsupportedMimeTypeException m) {
 			return;
 		}
 
 		Statement stat = connection.createStatement();
-		String query = "INSERT INTO urls VALUES ('"+urlID+"','"+url+"','')";
+		String query = "INSERT INTO urls VALUES ('"+urlID+"','"+url+"','"+imgUrl+"','')";
 		System.out.println("Executing " + query);
 		stat.executeUpdate( query );
 		fetchDescription(url, urlID);
