@@ -108,11 +108,11 @@ public class Crawler {
 		return null;
 	}
 
-	public void insertWordinDB(String Words[], int urlid) throws SQLException, IOException {
+	public void insertWordsinDB(String Words[], int urlid) throws SQLException, IOException {
 		for (String word: Words) {
 			Statement stat = connection.createStatement();
-			String query = "INSERT INTO words VALUES(\"" + word + "\", ";
-			System.out.println("Executing " + query);
+			String query = "INSERT INTO words VALUES(\"" + word + "\", " + urlid + ")";
+			//System.out.println("Executing " + query);
 			stat.executeUpdate(query);
 		}
 	}
@@ -150,7 +150,7 @@ public class Crawler {
 
 		text = doc.body().text();
 		String Words[] = text.split("\\P{Alpha}+");
-		insertWordInDB(Words, urlID);
+		insertWordsinDB(Words, urlID);
 	}
 
 	public void crawlBFS(String root) {
