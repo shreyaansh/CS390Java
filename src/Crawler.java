@@ -10,8 +10,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class Crawler
-{
+public class Crawler {
+
+	static Queue queue = new LinkedList<String>();
+
 	Connection connection;
 	int urlID;
 	public Properties props;
@@ -47,12 +49,14 @@ public class Crawler
 		// Delete the table first if any
 		try {
 			stat.executeUpdate("DROP TABLE URLS");
-		}
-		catch (Exception e) {
+			stat.executeUpdate("DROP TABLE WORDS");
+		} catch (Exception e) {
 		}
 			
 		// Create the table
         	stat.executeUpdate("CREATE TABLE URLS (urlid INT, url VARCHAR(512), description VARCHAR(200))");
+		// Create word table
+			stat.executeUpdate("CREATE TABLE WORDS (word VARCHAR(100), urdid INT)");
 	}
 
 	public boolean urlInDB(String urlFound) throws SQLException, IOException {
@@ -104,6 +108,15 @@ public class Crawler
 		return null;
 	}
 
+	public void insertWordinDB(String Words[], int urlid) throws SQLException, IOException {
+		for (String word: Words) {
+			Statement stat = connection.createStatement();
+			String query = "INSERT INTO words VALUES(\"" + word + "\", ";
+			System.out.println("Executing " + query);
+			stat.executeUpdate(query);
+		}
+	}
+
 	public void fetchDescription (String url, int urlID) throws SQLException, IOException {
 		Document doc = Jsoup.connect(url).get();
 
@@ -127,15 +140,35 @@ public class Crawler
 			if (tempDesc.length() < 200) desc = tempDesc;
 			else break;
 		}
+
 		System.out.println("Words: " + desc);
 
+		desc.replace("\"", "");
+		desc.replace("'", "");
+
 		insertDescInDB(desc, urlID);
+
+		text = doc.body().text();
+		String Words[] = text.split("\\P{Alpha}+");
+		insertWordInDB(Words, urlID);
 	}
 
-   	public void fetchURL(String url) {
+	public void crawlBFS(String root) {
+		queue.add(root);
+		//int counter = 0;
+
+		while (!queue.isEmpty()) {
+			String u = (String) queue.remove();
+			//System.out.println("Current count is: " + counter);
+			if (!fetchURL(u)) return;
+			//counter++;
+		}
+	}
+
+   	public Boolean fetchURL(String url) {
 		try {
-			System.out.println("Before opening");
-			Document doc = Jsoup.connect(url).get();
+			//System.out.println("Before opening");
+			Document doc = Jsoup.connect(url).timeout(3000).get();
 
 			// Selecting the links on the page
 			Elements links = doc.select("a[href]");
@@ -149,23 +182,26 @@ public class Crawler
 
 				// If URL doesn't exist in DB then add it
 				if (!urlInDB(absUrl)) {
+					if (urlID >= 100) return false;
+					queue.add(absUrl);
 					insertURLInDB(absUrl);
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return true;
 	}
 
-   	public static void main(String[] args)
-   	{
+   	public static void main(String[] args) {
 		Crawler crawler = new Crawler();
 
 		try {
 			crawler.readProperties();
 			String root = crawler.props.getProperty("crawler.root");
 			crawler.createDB();
-			crawler.fetchURL(root);
+			//crawler.fetchURL(root);
+			crawler.crawlBFS(root);
 		} catch( Exception e) {
          		e.printStackTrace();
 		}
