@@ -210,8 +210,8 @@ public class Crawler {
 			crawler.readProperties();
 			String root = crawler.props.getProperty("crawler.root");
 			crawler.createDB();
-			//crawler.fetchURL(root);
-			crawler.crawlBFS(root);
+			crawler.fetchURL(root);
+			crawler.crawlBFS("https://www.cs.purdue.edu/about/phds_map.html");
 		} catch( Exception e) {
          		e.printStackTrace();
 		}
