@@ -108,7 +108,7 @@ public class Crawler {
 		return null;
 	}
 
-	public void insertWordsinDB(String Words[], int urlid) throws SQLException, IOException {
+	public void insertWordsInDB(String Words[], int urlid) throws SQLException, IOException {
 		for (String word: Words) {
 			Statement stat = connection.createStatement();
 			String query = "INSERT INTO words VALUES(\"" + word + "\", " + urlid + ")";
@@ -130,7 +130,7 @@ public class Crawler {
 
 		String text = description + " " + title;
 
-		text.toLowerCase();
+		text = text.toLowerCase();
 		String words[] = text.split("\\P{Alpha}+");
 
 		String desc = "";
@@ -149,8 +149,9 @@ public class Crawler {
 		insertDescInDB(desc, urlID);
 
 		text = doc.body().text();
+		text = text.toLowerCase();
 		String Words[] = text.split("\\P{Alpha}+");
-		insertWordsinDB(Words, urlID);
+		insertWordsInDB(Words, urlID);
 	}
 
 	public void crawlBFS(String root) {
@@ -168,7 +169,7 @@ public class Crawler {
    	public Boolean fetchURL(String url) {
 		try {
 			//System.out.println("Before opening");
-			Document doc = Jsoup.connect(url).timeout(3000).get();
+			Document doc = Jsoup.connect(url).timeout(1000).get();
 
 			// Selecting the links on the page
 			Elements links = doc.select("a[href]");
@@ -182,7 +183,7 @@ public class Crawler {
 
 				// If URL doesn't exist in DB then add it
 				if (!urlInDB(absUrl)) {
-					if (urlID >= 100) return false;
+					if (urlID >= 10000) return false;
 					queue.add(absUrl);
 					insertURLInDB(absUrl);
 				}
